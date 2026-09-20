@@ -19,6 +19,10 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Configure Project for CI
+        run: |
+          sed -i '' 's/DEVELOPMENT_TEAM: ""/DEVELOPMENT_TEAM: ""\n      CODE_SIGN_STYLE: Manual/g' project.yml || true
+
       - name: Generate Xcode Project
         run: xcodegen generate
 
@@ -34,12 +38,14 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_ENTITLEMENTS="" \
+            DEVELOPMENT_TEAM="" \
             clean build
 
       - name: Package Unsigned .ipa
         run: |
           mkdir -p Payload
           APP_PATH=$(find build -name "GeminiVPN.app" -type d | head -n 1)
+          echo "Packaging: $APP_PATH"
           cp -r "$APP_PATH" Payload/
           zip -r GeminiVPN-unsigned.ipa Payload
 
