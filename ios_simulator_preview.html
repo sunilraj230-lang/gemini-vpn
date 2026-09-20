@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GeminiVPN - Interactive iOS Simulator Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.2); opacity: 0.2; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+    @keyframes spin-slow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .pulse-ring-anim {
+      animation: pulse-ring 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+    }
+    .spin-anim {
+      animation: spin-slow 1.4s linear infinite;
+    }
+  </style>
+</head>
+<body class="bg-[#0a0d14] text-white flex flex-col items-center justify-center min-h-screen p-4 font-sans select-none">
+
+  <!-- Title & Instructions -->
+  <div class="mb-4 text-center max-w-lg">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold mb-2">
+      <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+      Interactive iOS 18 Simulator Preview
+    </div>
+    <h1 class="text-2xl font-black tracking-tight text-white">GeminiVPN Web Test Harness</h1>
+    <p class="text-xs text-gray-400 mt-1">Test the 1-Tap Smart Connect, Smart/Global routing modes, server switching, and settings directly in your browser without needing a physical Mac.</p>
+  </div>
+
+  <!-- iPhone 16 Pro Device Frame -->
+  <div class="relative w-[385px] h-[790px] bg-[#000000] rounded-[52px] p-3 shadow-2xl border-4 border-[#2b2e36] ring-1 ring-white/10 flex flex-col overflow-hidden">
+    
+    <!-- Screen Bezel Container -->
+    <div class="relative w-full h-full bg-[#05070d] rounded-[42px] overflow-hidden flex flex-col justify-between text-white">
+      
+      <!-- iOS Status Bar & Dynamic Island -->
+      <div class="relative z-30 pt-3 px-6 flex justify-between items-center text-xs font-semibold">
+        <span id="ios-clock" class="font-mono">9:41</span>
+        
+        <!-- Dynamic Island Pill -->
+        <div class="absolute left-1/2 -translate-x-1/2 top-2.5 w-24 h-6 bg-black rounded-full flex items-center justify-end px-2 border border-white/5">
+          <div id="vpn-island-dot" class="w-2 h-2 rounded-full bg-transparent transition-colors"></div>
+        </div>
+        
+        <div class="flex items-center gap-1.5 text-[11px]">
+          <span id="vpn-badge-statusbar" class="hidden px-1.5 py-0.2 bg-cyan-500/20 text-cyan-300 text-[9px] rounded font-bold">VPN</span>
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
+          <div class="w-5 h-2.5 border border-white/70 rounded-sm p-0.5 flex items-center"><div class="w-full h-full bg-white rounded-2xs"></div></div>
+        </div>
+      </div>
+
+      <!-- Main Screen Content Scrollable Area -->
+      <div class="relative flex-1 flex flex-col justify-between p-5 z-20 overflow-y-auto">
+        
+        <!-- Top App Header -->
+        <div>
+          <div class="flex items-center justify-between mt-1">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/20">
+                🛡️
+              </div>
+              <div>
+                <h2 class="text-base font-black tracking-wider leading-none text-white">GEMINI VPN</h2>
+                <span class="text-[8px] font-bold font-mono tracking-widest text-cyan-400">LETSVPN-GRADE STEALTH</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <!-- CDN Mirror Refresh Button -->
+              <button id="btn-refresh" onclick="simulateRefresh()" title="Refresh unblocked nodes" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-300 transition">
+                <svg id="refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              </button>
+              <!-- Settings Button -->
+              <button onclick="openModal('modal-settings')" title="Security & Protocols" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-300 transition">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          <!-- Mode Selector (Smart Mode vs Global Mode) -->
+          <div class="mt-4 p-1 bg-white/5 rounded-xl border border-white/5">
+            <div class="grid grid-cols-2 gap-1 text-xs font-bold">
+              <button id="tab-smart" onclick="setMode('smart')" class="py-1.5 rounded-lg bg-cyan-500 text-black flex items-center justify-center gap-1.5 transition">
+                <span>✨</span> Smart Mode
+              </button>
+              <button id="tab-global" onclick="setMode('global')" class="py-1.5 rounded-lg text-gray-400 hover:text-white flex items-center justify-center gap-1.5 transition">
+                <span>🌐</span> Global Mode
+              </button>
+            </div>
+            <p id="mode-desc" class="text-[10px] text-gray-400 text-center mt-1.5 px-2">
+              ⚡ Domestic banking/maps stay direct; foreign apps route via stealth tunnel
+            </p>
+          </div>
+        </div>
+
+        <!-- Central Smart Connect Button Section -->
+        <div class="my-auto flex flex-col items-center justify-center relative py-6">
+          
+          <!-- Animated Pulse Rings (Visible When Connected) -->
+          <div id="pulse-ring" class="hidden absolute w-48 h-48 rounded-full border border-green-500/40 pulse-ring-anim"></div>
+          
+          <!-- Rotating Spinner (Visible When Connecting) -->
+          <div id="connecting-ring" class="hidden absolute w-44 h-44 rounded-full border-2 border-orange-500/20 border-t-orange-400 spin-anim"></div>
+
+          <!-- Main Connect Button -->
+          <button id="connect-btn" onclick="toggleConnect()" class="relative z-10 w-36 h-36 rounded-full bg-gradient-to-b from-[#0e1626] to-[#080d16] border-2 border-cyan-500/40 shadow-xl shadow-cyan-500/10 hover:scale-105 active:scale-95 transition-all duration-300 flex flex-col items-center justify-center gap-1">
+            <span id="btn-icon" class="text-4xl filter drop-shadow">⚡</span>
+            <span id="btn-label" class="text-[11px] font-black tracking-wider text-cyan-400">CONNECT</span>
+          </button>
+
+          <!-- Status Text -->
+          <div class="mt-5 text-center">
+            <h3 id="status-title" class="text-xs font-black tracking-wider text-gray-300 uppercase">READY • 1-TAP SMART CONNECT</h3>
+            <p id="status-subtitle" class="text-[11px] text-gray-500 font-mono mt-0.5">Auto-selects fastest unblocked stealth node</p>
+          </div>
+        </div>
+
+        <!-- Telemetry & Server Cards Area -->
+        <div class="space-y-2.5">
+          
+          <!-- Live Bandwidth Counter (When Connected) -->
+          <div id="telemetry-card" class="hidden p-3 rounded-2xl bg-white/5 border border-white/5 grid grid-cols-2 divide-x divide-white/10 text-xs">
+            <div class="pr-3 flex items-center gap-2">
+              <span class="text-green-400">⬇</span>
+              <div>
+                <div class="text-[9px] text-gray-400 font-mono">DOWNLOAD</div>
+                <div id="speed-down" class="font-bold text-white">24.6 MB/s</div>
+              </div>
+            </div>
+            <div class="pl-3 flex items-center gap-2">
+              <span class="text-cyan-400">⬆</span>
+              <div>
+                <div class="text-[9px] text-gray-400 font-mono">UPLOAD</div>
+                <div id="speed-up" class="font-bold text-white">5.8 MB/s</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Server Selector Card -->
+          <div onclick="openModal('modal-servers')" class="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 cursor-pointer flex items-center justify-between transition">
+            <div class="flex items-center gap-2.5">
+              <span id="server-flag" class="text-2xl">🇯🇵</span>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span id="server-name" class="text-xs font-bold text-white">Tokyo Stealth 1</span>
+                  <span class="px-1 py-0.2 bg-cyan-500/20 text-cyan-300 text-[8px] rounded font-bold">DPI-OFF</span>
+                </div>
+                <span id="server-city" class="text-[10px] text-gray-400">Tokyo, Japan • 24% load</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-[10px] font-mono text-green-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                <span id="server-ping">38 ms</span>
+              </div>
+              <span class="text-gray-500 text-xs">›</span>
+            </div>
+          </div>
+
+          <!-- Security Badges Bar -->
+          <div class="grid grid-cols-3 gap-1.5 text-[9px] font-mono">
+            <div class="py-1 px-1.5 rounded-lg bg-white/5 text-center text-cyan-300 border border-cyan-500/20">✓ DPI BYPASS</div>
+            <div class="py-1 px-1.5 rounded-lg bg-white/5 text-center text-green-300 border border-green-500/20">✓ KILL-SWITCH</div>
+            <div class="py-1 px-1.5 rounded-lg bg-white/5 text-center text-blue-300 border border-blue-500/20">✓ NO LEAK</div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- iOS Home Bar Indicator -->
+      <div class="relative z-30 pb-2 flex justify-center">
+        <div class="w-32 h-1 bg-white/40 rounded-full"></div>
+      </div>
+
+    </div>
+
+    <!-- Server List Modal Sheet -->
+    <div id="modal-servers" class="hidden absolute inset-0 bg-black/80 z-50 p-4 flex flex-col justify-end backdrop-blur-sm transition-all">
+      <div class="bg-[#0f131d] rounded-3xl p-4 border border-white/10 max-h-[85%] flex flex-col">
+        <div class="flex justify-between items-center pb-3 border-b border-white/10">
+          <h4 class="text-sm font-bold">Select Stealth Server</h4>
+          <button onclick="closeModal('modal-servers')" class="text-xs text-cyan-400 font-bold">Done</button>
+        </div>
+        <div class="my-3 space-y-2 overflow-y-auto max-h-80 pr-1">
+          <div onclick="selectServer('🇯🇵', 'Tokyo Stealth 1', 'Tokyo, Japan', '38 ms')" class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/40 flex justify-between items-center cursor-pointer">
+            <div class="flex items-center gap-2"><span>🇯🇵</span><div class="text-xs font-bold text-white">Tokyo Stealth 1</div></div>
+            <span class="text-[10px] text-green-400 font-mono">38 ms</span>
+          </div>
+          <div onclick="selectServer('🇩🇪', 'Frankfurt Ultra', 'Frankfurt, Germany', '42 ms')" class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 flex justify-between items-center cursor-pointer">
+            <div class="flex items-center gap-2"><span>🇩🇪</span><div class="text-xs font-bold text-white">Frankfurt Ultra</div></div>
+            <span class="text-[10px] text-green-400 font-mono">42 ms</span>
+          </div>
+          <div onclick="selectServer('🇺🇸', 'US East (New York)', 'New York, US', '85 ms')" class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 flex justify-between items-center cursor-pointer">
+            <div class="flex items-center gap-2"><span>🇺🇸</span><div class="text-xs font-bold text-white">US East Stealth</div></div>
+            <span class="text-[10px] text-yellow-400 font-mono">85 ms</span>
+          </div>
+          <div onclick="selectServer('🇸🇬', 'Singapore Shield', 'Singapore', '29 ms')" class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 flex justify-between items-center cursor-pointer">
+            <div class="flex items-center gap-2"><span>🇸🇬</span><div class="text-xs font-bold text-white">Singapore Shield</div></div>
+            <span class="text-[10px] text-green-400 font-mono">29 ms</span>
+          </div>
+          <div onclick="selectServer('🇨🇭', 'Zurich Privacy Hub', 'Zurich, Switzerland', '48 ms')" class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 flex justify-between items-center cursor-pointer">
+            <div class="flex items-center gap-2"><span>🇨🇭</span><div class="text-xs font-bold text-white">Zurich Privacy Hub</div></div>
+            <span class="text-[10px] text-green-400 font-mono">48 ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal Sheet -->
+    <div id="modal-settings" class="hidden absolute inset-0 bg-black/80 z-50 p-4 flex flex-col justify-end backdrop-blur-sm transition-all">
+      <div class="bg-[#0f131d] rounded-3xl p-4 border border-white/10 max-h-[85%] flex flex-col">
+        <div class="flex justify-between items-center pb-3 border-b border-white/10">
+          <h4 class="text-sm font-bold">Security & Protocols</h4>
+          <button onclick="closeModal('modal-settings')" class="text-xs text-cyan-400 font-bold">Done</button>
+        </div>
+        <div class="my-3 space-y-3 overflow-y-auto max-h-80 pr-1 text-xs">
+          <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+            <div><div class="font-bold">AmneziaWG Obfuscation</div><div class="text-[10px] text-gray-400">Mutates H1-H4 headers against DPI</div></div>
+            <input type="checkbox" checked class="w-4 h-4 accent-cyan-400">
+          </div>
+          <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+            <div><div class="font-bold">Dynamic Failover</div><div class="text-[10px] text-gray-400">Fallback to TLS 1.3 on port 443</div></div>
+            <input type="checkbox" checked class="w-4 h-4 accent-cyan-400">
+          </div>
+          <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+            <div><div class="font-bold">Kill-Switch</div><div class="text-[10px] text-gray-400">Drops traffic if VPN disconnects</div></div>
+            <input type="checkbox" checked class="w-4 h-4 accent-green-400">
+          </div>
+          <div class="flex justify-between items-center p-2 rounded-xl bg-white/5">
+            <div><div class="font-bold">IPv6 Leak Shield</div><div class="text-[10px] text-gray-400">Routes 5G/LTE IPv6 via tunnel</div></div>
+            <input type="checkbox" checked class="w-4 h-4 accent-cyan-400">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let vpnState = 'disconnected'; // 'disconnected', 'connecting', 'connected'
+    let routingMode = 'smart';
+    let durationSeconds = 0;
+    let timerInterval = null;
+
+    // Clock
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('ios-clock').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    }, 1000);
+
+    function setMode(mode) {
+      routingMode = mode;
+      const smartTab = document.getElementById('tab-smart');
+      const globalTab = document.getElementById('tab-global');
+      const desc = document.getElementById('mode-desc');
+
+      if (mode === 'smart') {
+        smartTab.className = "py-1.5 rounded-lg bg-cyan-500 text-black flex items-center justify-center gap-1.5 transition";
+        globalTab.className = "py-1.5 rounded-lg text-gray-400 hover:text-white flex items-center justify-center gap-1.5 transition";
+        desc.innerText = "⚡ Domestic banking/maps stay direct; foreign apps route via stealth tunnel";
+      } else {
+        globalTab.className = "py-1.5 rounded-lg bg-cyan-500 text-black flex items-center justify-center gap-1.5 transition";
+        smartTab.className = "py-1.5 rounded-lg text-gray-400 hover:text-white flex items-center justify-center gap-1.5 transition";
+        desc.innerText = "🔒 100% of all apps & system traffic routed through encrypted tunnel";
+      }
+
+      if (vpnState === 'connected') {
+        document.getElementById('status-title').innerText = mode === 'smart' ? 'PROTECTED • SMART MODE' : 'PROTECTED • GLOBAL MODE';
+      }
+    }
+
+    function toggleConnect() {
+      if (vpnState === 'disconnected') {
+        // Start Connecting
+        vpnState = 'connecting';
+        updateUI();
+
+        setTimeout(() => {
+          vpnState = 'connected';
+          durationSeconds = 0;
+          clearInterval(timerInterval);
+          timerInterval = setInterval(updateTimer, 1000);
+          updateUI();
+        }, 1200);
+      } else if (vpnState === 'connected' || vpnState === 'connecting') {
+        vpnState = 'disconnected';
+        clearInterval(timerInterval);
+        durationSeconds = 0;
+        updateUI();
+      }
+    }
+
+    function updateTimer() {
+      durationSeconds++;
+      const m = Math.floor(durationSeconds / 60).toString().padStart(2, '0');
+      const s = (durationSeconds % 60).toString().padStart(2, '0');
+      document.getElementById('status-subtitle').innerText = `Session: 00:${m}:${s} • Encrypted WireGuard`;
+    }
+
+    function updateUI() {
+      const btn = document.getElementById('connect-btn');
+      const icon = document.getElementById('btn-icon');
+      const label = document.getElementById('btn-label');
+      const title = document.getElementById('status-title');
+      const sub = document.getElementById('status-subtitle');
+      const ring = document.getElementById('pulse-ring');
+      const spinRing = document.getElementById('connecting-ring');
+      const telemetry = document.getElementById('telemetry-card');
+      const vpnDot = document.getElementById('vpn-island-dot');
+      const vpnBadge = document.getElementById('vpn-badge-statusbar');
+
+      if (vpnState === 'connecting') {
+        btn.className = "relative z-10 w-36 h-36 rounded-full bg-gradient-to-b from-[#261d0e] to-[#140e06] border-2 border-orange-500/60 shadow-xl shadow-orange-500/20 transition-all duration-300 flex flex-col items-center justify-center gap-1";
+        icon.innerText = "⏳";
+        label.innerText = "CONNECTING";
+        label.className = "text-[11px] font-black tracking-wider text-orange-400";
+        title.innerText = "CONNECTING (OPTIMAL NODE)...";
+        title.className = "text-xs font-black tracking-wider text-orange-400 uppercase";
+        sub.innerText = "Bypassing Deep Packet Inspection...";
+        ring.classList.add('hidden');
+        spinRing.classList.remove('hidden');
+        telemetry.classList.add('hidden');
+        vpnDot.className = "w-2 h-2 rounded-full bg-orange-400 animate-pulse";
+        vpnBadge.classList.add('hidden');
+      } else if (vpnState === 'connected') {
+        btn.className = "relative z-10 w-36 h-36 rounded-full bg-gradient-to-b from-[#0e2617] to-[#07160d] border-2 border-green-500/70 shadow-xl shadow-green-500/30 transition-all duration-300 flex flex-col items-center justify-center gap-1";
+        icon.innerText = "🛡️";
+        label.innerText = "DISCONNECT";
+        label.className = "text-[11px] font-black tracking-wider text-green-400";
+        title.innerText = routingMode === 'smart' ? "PROTECTED • SMART MODE" : "PROTECTED • GLOBAL MODE";
+        title.className = "text-xs font-black tracking-wider text-green-400 uppercase";
+        sub.innerText = "Session: 00:00:00 • Encrypted WireGuard";
+        ring.classList.remove('hidden');
+        spinRing.classList.add('hidden');
+        telemetry.classList.remove('hidden');
+        vpnDot.className = "w-2 h-2 rounded-full bg-green-400";
+        vpnBadge.classList.remove('hidden');
+      } else {
+        btn.className = "relative z-10 w-36 h-36 rounded-full bg-gradient-to-b from-[#0e1626] to-[#080d16] border-2 border-cyan-500/40 shadow-xl shadow-cyan-500/10 hover:scale-105 active:scale-95 transition-all duration-300 flex flex-col items-center justify-center gap-1";
+        icon.innerText = "⚡";
+        label.innerText = "CONNECT";
+        label.className = "text-[11px] font-black tracking-wider text-cyan-400";
+        title.innerText = "READY • 1-TAP SMART CONNECT";
+        title.className = "text-xs font-black tracking-wider text-gray-300 uppercase";
+        sub.innerText = "Auto-selects fastest unblocked stealth node";
+        ring.classList.add('hidden');
+        spinRing.classList.add('hidden');
+        telemetry.classList.add('hidden');
+        vpnDot.className = "w-2 h-2 rounded-full bg-transparent";
+        vpnBadge.classList.add('hidden');
+      }
+    }
+
+    function simulateRefresh() {
+      const icon = document.getElementById('refresh-icon');
+      icon.classList.add('spin-anim');
+      setTimeout(() => {
+        icon.classList.remove('spin-anim');
+        alert("✅ Dynamic Node Pool refreshed via Cloudflare CDN bootstrap mirror!");
+      }, 1000);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function selectServer(flag, name, city, ping) {
+      document.getElementById('server-flag').innerText = flag;
+      document.getElementById('server-name').innerText = name;
+      document.getElementById('server-city').innerText = city;
+      document.getElementById('server-ping').innerText = ping;
+      closeModal('modal-servers');
+      if (vpnState === 'connected') {
+        toggleConnect();
+        setTimeout(toggleConnect, 300);
+      }
+    }
+  </script>
+</body>
+</html>
