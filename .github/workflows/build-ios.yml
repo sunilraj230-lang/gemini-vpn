@@ -53,11 +53,22 @@ jobs:
                   f.write(content)
               print(f"Successfully processed {path}")
 
-          # 1. Fix PacketTunnelProvider imports and Sendable conformance
-          patch_content('PacketTunnel/PacketTunnelProvider.swift', [
-              ('import os.log', 'import OSLog'),
-              ('class PacketTunnelProvider: NEPacketTunnelProvider {', 'class PacketTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {')
-          ])
+          # 1. Fix PacketTunnelProvider imports, Sendable, NWEndpoint, and closures
+          if os.path.exists('PacketTunnel/PacketTunnelProvider.swift'):
+              with open('PacketTunnel/PacketTunnelProvider.swift', 'r', encoding='utf-8') as f:
+                  p = f.read()
+              p = p.replace('import os.log', 'import OSLog')
+              if 'typealias NWEndpoint' not in p:
+                  p = p.replace('import OSLog', 'import OSLog\n\ntypealias NWEndpoint = Network.NWEndpoint')
+              p = p.replace('class PacketTunnelProvider: NEPacketTunnelProvider {', 'class PacketTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {')
+              p = p.replace('let port = NWEndpoint.Port(rawValue: portInt)', 'let port = Network.NWEndpoint.Port(rawValue: portInt)')
+              p = p.replace('let host = NWEndpoint.Host(String(parts[0]))', 'let host = Network.NWEndpoint.Host(String(parts[0]))')
+              p = p.replace('private func setupOutboundConnection(host: NWEndpoint.Host, port: NWEndpoint.Port)', 'private func setupOutboundConnection(host: Network.NWEndpoint.Host, port: Network.NWEndpoint.Port)')
+              p = p.replace('conn.stateUpdateHandler = { [weak self] state in', 'conn.stateUpdateHandler = { [weak self] (state: NWConnection.State) in')
+              p = p.replace('conn.start(queue: .global(qos: .userInitiated))', 'conn.start(queue: DispatchQueue.global(qos: .userInitiated))')
+              with open('PacketTunnel/PacketTunnelProvider.swift', 'w', encoding='utf-8') as f:
+                  f.write(p)
+              print("Patched PacketTunnelProvider.swift successfully")
 
           # 2. Fix SharedStorage Sendable
           patch_content('Shared/SharedStorage.swift', [
@@ -96,7 +107,7 @@ jobs:
           python3 << 'EOF'
           import re
           path = 'GeminiVPN.xcodeproj/project.pbxproj'
-          with open(path, 'r', encoding='utf-8') as f:
+          with open(path, 'r') as f:
               content = f.read()
           content = re.sub(r'objectVersion = \d+;', 'objectVersion = 56;', content)
           with open(path, 'w') as f:
