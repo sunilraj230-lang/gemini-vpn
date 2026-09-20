@@ -50,7 +50,11 @@ jobs:
           with open('PacketTunnel/PacketTunnelProvider.swift', 'w', encoding='utf-8') as f: f.write(c)
 
           with open('GeminiVPN/Services/VPNManager.swift', 'r', encoding='utf-8') as f: v = f.read()
-          v = v.replace('private func formatSpeed(bytes: UInt64) -> String {', 'nonisolated private func formatSpeed(bytes: UInt64) -> String {')
+          if 'DispatchQueue.main.async' not in v:
+              v = v.replace('timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in', 'timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in\n            DispatchQueue.main.async {')
+              v = v.replace('self.lastBytesOut = bytesOut', 'self.lastBytesOut = bytesOut\n            }')
+          if 'nonisolated private func formatSpeed' not in v:
+              v = v.replace('private func formatSpeed(bytes: UInt64) -> String {', 'nonisolated private func formatSpeed(bytes: UInt64) -> String {')
           with open('GeminiVPN/Services/VPNManager.swift', 'w', encoding='utf-8') as f: f.write(v)
 
           for path in ['Shared/SharedStorage.swift', 'PacketTunnel/AmneziaWGObfuscator.swift', 'GeminiVPN/Services/DynamicNodePoolService.swift', 'GeminiVPN/Services/ConfigImportService.swift']:
@@ -86,7 +90,7 @@ jobs:
           content = content.replace('SWIFT_STRICT_CONCURRENCY = complete;', 'SWIFT_STRICT_CONCURRENCY = minimal;')
           content = content.replace('SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;', 'SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;')
           content = content.replace('GCC_TREAT_WARNINGS_AS_ERRORS = YES;', 'GCC_TREAT_WARNINGS_AS_ERRORS = NO;')
-          with open(path, 'w', encoding='utf-8') as f: content = f.write(content)
+          with open(path, 'w', encoding='utf-8') as f: f.write(content)
           print('Patched project.pbxproj: format=56, concurrency=minimal, warnings-as-errors=NO')
           "
 
