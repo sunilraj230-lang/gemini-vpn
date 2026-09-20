@@ -16,6 +16,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Select Xcode Version
+        run: |
+          if [ -d "/Applications/Xcode_16.0.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.0.app
+          elif [ -d "/Applications/Xcode_15.4.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_15.4.app
+          fi
+          xcodebuild -version
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
@@ -25,6 +34,17 @@ jobs:
 
       - name: Generate Xcode Project
         run: xcodegen generate
+
+      - name: Fix Xcode Project Format Compatibility
+        run: |
+          python3 -c "
+          import re
+          path = 'GeminiVPN.xcodeproj/project.pbxproj'
+          with open(path, 'r') as f: content = f.read()
+          content = re.sub(r'objectVersion = \d+;', 'objectVersion = 56;', content)
+          with open(path, 'w') as f: f.write(content)
+          print('Successfully patched project format objectVersion to 56!')
+          "
 
       - name: Build Main App & Network Extension
         run: |
@@ -45,7 +65,7 @@ jobs:
         run: |
           mkdir -p Payload
           APP_PATH=$(find build -name "GeminiVPN.app" -type d | head -n 1)
-          echo "Packaging: $APP_PATH"
+          echo "Packaging application found at: $APP_PATH"
           cp -r "$APP_PATH" Payload/
           zip -r GeminiVPN-unsigned.ipa Payload
 
