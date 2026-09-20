@@ -49,12 +49,22 @@ jobs:
           c = c.replace('conn.start(queue: .global(qos: .userInitiated))', 'conn.start(queue: DispatchQueue.global(qos: .userInitiated))')
           with open('PacketTunnel/PacketTunnelProvider.swift', 'w', encoding='utf-8') as f: f.write(c)
 
+          for v_path in ['GeminiVPN/Views/Servers/AddServerModal.swift', 'GeminiVPN/Views/Servers/ServerListView.swift', 'GeminiVPN/Views/Dashboard/DashboardView.swift', 'GeminiVPN/Views/Settings/SettingsView.swift']:
+              try:
+                  with open(v_path, 'r', encoding='utf-8') as f: v_code = f.read()
+                  if '@MainActor' not in v_code:
+                      v_code = v_code.replace('public struct ', '@MainActor\npublic struct ')
+                      with open(v_path, 'w', encoding='utf-8') as f: f.write(v_code)
+              except Exception: pass
+
           with open('GeminiVPN/Services/VPNManager.swift', 'r', encoding='utf-8') as f: v = f.read()
-          if 'DispatchQueue.main.async' not in v:
+          if 'DispatchQueue.main.async' not in v and 'Task { @MainActor' not in v:
               v = v.replace('timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in', 'timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in\n            DispatchQueue.main.async {')
               v = v.replace('self.lastBytesOut = bytesOut', 'self.lastBytesOut = bytesOut\n            }')
           if 'nonisolated private func formatSpeed' not in v:
               v = v.replace('private func formatSpeed(bytes: UInt64) -> String {', 'nonisolated private func formatSpeed(bytes: UInt64) -> String {')
+          if 'self.updateStatus(from: connection.status)' in v and 'Task { @MainActor' not in v:
+              v = v.replace('self.updateStatus(from: connection.status)', 'Task { @MainActor [weak self] in self?.updateStatus(from: connection.status) }')
           with open('GeminiVPN/Services/VPNManager.swift', 'w', encoding='utf-8') as f: f.write(v)
 
           for path in ['Shared/SharedStorage.swift', 'PacketTunnel/AmneziaWGObfuscator.swift', 'GeminiVPN/Services/DynamicNodePoolService.swift', 'GeminiVPN/Services/ConfigImportService.swift']:
