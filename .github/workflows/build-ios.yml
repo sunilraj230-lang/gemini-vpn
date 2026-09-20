@@ -16,13 +16,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set Xcode Version
-        run: |
-          if [ -d "/Applications/Xcode_15.4.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_15.4.app
-          fi
-          xcodebuild -version
-
       - name: Install XcodeGen
         run: brew install xcodegen
 
@@ -38,12 +31,16 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_ENTITLEMENTS="" \
             clean build
 
       - name: Package Unsigned .ipa
         run: |
           mkdir -p Payload
-          cp -r build/Build/Products/Release-iphoneos/GeminiVPN.app Payload/
+          APP_PATH=$(find build -name "GeminiVPN.app" -type d | head -n 1)
+          cp -r "$APP_PATH" Payload/
           zip -r GeminiVPN-unsigned.ipa Payload
 
       - name: Upload .ipa Artifact
